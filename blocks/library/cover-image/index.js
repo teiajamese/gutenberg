@@ -23,6 +23,7 @@ import ImagePlaceholder from '../../image-placeholder';
 import BlockControls from '../../block-controls';
 import BlockAlignmentToolbar from '../../block-alignment-toolbar';
 import InspectorControls from '../../inspector-controls';
+import InnerBlocks from '../../inner-blocks';
 
 const validAlignments = [ 'left', 'center', 'right', 'wide', 'full' ];
 
@@ -196,23 +197,23 @@ export const settings = {
 				style={ style }
 				className={ classes }
 			>
-				{ title || isSelected ? (
-					<RichText
-						tagName="p"
-						className="wp-block-cover-image-text"
-						placeholder={ __( 'Write title…' ) }
-						value={ title }
-						onChange={ ( value ) => setAttributes( { title: value } ) }
-						isSelected={ isSelected }
-						inlineToolbar
-					/>
-				) : null }
+				<InnerBlocks
+					template={ [
+						[ 'core/paragraph', {
+							align: 'center',
+							fontSize: 37,
+							placeholder: 'Write title…',
+							textColor: '#fff',
+						} ],
+					] }
+					allowedBlockNames={ [ 'core/button', 'core/heading', 'core/paragraph', 'core/subhead' ] }
+				/>
 			</div>,
 		];
 	},
 
 	save( { attributes, className } ) {
-		const { url, title, hasParallax, dimRatio, align, contentAlign } = attributes;
+		const { url, hasParallax, dimRatio, align, contentAlign } = attributes;
 		const style = backgroundImageStyles( url );
 		const classes = classnames(
 			className,
@@ -227,9 +228,7 @@ export const settings = {
 
 		return (
 			<div className={ classes } style={ style }>
-				{ title && title.length > 0 && (
-					<p className="wp-block-cover-image-text">{ title }</p>
-				) }
+				<InnerBlocks.Content />
 			</div>
 		);
 	},

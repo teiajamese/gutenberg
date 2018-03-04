@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { isEmpty } from 'lodash';
+import { get, intersection, isEmpty } from 'lodash';
 
 /**
  * WordPress dependencies
@@ -46,6 +46,7 @@ class Inserter extends Component {
 			onInsertBlock,
 			hasSupportedBlocks,
 			isLocked,
+			supportedBlockTypes,
 		} = this.props;
 
 		if ( ! hasSupportedBlocks || isLocked ) {
@@ -77,7 +78,7 @@ class Inserter extends Component {
 						onClose();
 					};
 
-					return <InserterMenu onSelect={ onSelect } />;
+					return <InserterMenu onSelect={ onSelect } supportedBlockTypes={ supportedBlockTypes } />;
 				} }
 			/>
 		);
@@ -85,10 +86,16 @@ class Inserter extends Component {
 }
 
 export default compose( [
-	withSelect( ( select ) => ( {
-		insertionPoint: select( 'core/editor' ).getBlockInsertionPoint(),
-		selectedBlock: select( 'core/editor' ).getSelectedBlock(),
-	} ) ),
+	withSelect( ( select ) => {
+		const insertionPoint = select( 'core/editor' ).getBlockInsertionPoint();
+		const { rootUID } = insertionPoint;
+		const blockListSettings = select( 'core/editor' ).getBlockListSettings( rootUID );
+		return {
+			insertionPoint,
+			selectedBlock: select( 'core/editor' ).getSelectedBlock(),
+			supportedBlocks: get( blockListSettings, 'supportedBlocks' ),
+		};
+	} ),
 	withDispatch( ( dispatch, ownProps ) => ( {
 		showInsertionPoint: dispatch( 'core/editor' ).showInsertionPoint,
 		hideInsertionPoint: dispatch( 'core/editor' ).hideInsertionPoint,
@@ -103,11 +110,19 @@ export default compose( [
 			return dispatch( 'core/editor' ).insertBlock( insertedBlock, index, rootUID );
 		},
 	} ) ),
-	withContext( 'editor' )( ( settings ) => {
+	withContext( 'editor' )( ( settings, props ) => {
 		const { blockTypes, templateLock } = settings;
-
+		let supportedBlockTypes;
+		if ( ! props.supportedBlocks ) {
+			supportedBlockTypes = blockTypes;
+		} else if ( true === blockTypes ) {
+			supportedBlockTypes = props.supportedBlocks;
+		} else {
+			supportedBlockTypes = intersection( blockTypes, props.supportedBlocks );
+		}
 		return {
-			hasSupportedBlocks: true === blockTypes || ! isEmpty( blockTypes ),
+			hasSupportedBlocks: ( true === supportedBlockTypes ) || ! isEmpty( supportedBlockTypes ),
+			supportedBlockTypes,
 			isLocked: !! templateLock,
 		};
 	} ),
